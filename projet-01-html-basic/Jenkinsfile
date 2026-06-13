@@ -8,11 +8,13 @@ pipeline {
         }
         stage('test'){
             step {
-                sh 'docker run -d --name project01 -p 9001:80 project01:${BUILD_NUMBER}'
-                sh 'sleep 2'
-                sh 'curl -f http://localhost:9001 || true'
-                sh 'docker stop project01 && docker rm project01'
-            }
+                     sh '''
+                      docker run -d --name project01 -p 9001:80 project01:${BUILD_NUMBER}
+                      sleep 2
+                      curl -f http://localhost:9001 || exit 1
+                      docker stop project01 && docker rm project01
+                  '''
+              }
         }
         post {
             always {
