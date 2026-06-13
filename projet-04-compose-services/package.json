@@ -1,0 +1,11 @@
+{
+  "name": "projet-04-compose",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "redis": "^4.6.0"
+  }
+}

@@ -1,0 +1,23 @@
+pipeline {
+    agant any
+    stages {
+        stage('Build'){
+            step {
+                sh 'docker build -t projetct01:${BUILD_NUMBER} .'
+            }
+        }
+        stage('test'){
+            step {
+                sh 'docker run -d --name project01 -p 9001:80 project01:${BUILD_NUMBER}'
+                sh 'sleep 2'
+                sh 'curl -f http://localhost:9001 || true'
+                sh 'docker stop project01 && docker rm project01'
+            }
+        }
+        post {
+            always {
+                sh 'docker rmi project01:${BUILD_NUMBER}  || true'
+            }
+        }
+    }
+}
