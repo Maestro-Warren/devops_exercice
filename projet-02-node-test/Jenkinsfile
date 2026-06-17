@@ -2,14 +2,20 @@ pipeline{
     agent any
     stages{
         stage('Install'){
+            agent { docker { image 'node:18-alpine' } }
             steps{
-                sh 'npm ci'
+                dir('projet-02-node-test'){
+                    sh 'npm ci'
+                }
             }
         }
         stage('Test'){
+            agent { docker { image 'node:18-alpine' } }
             steps{
-                echo 'Executions des testes...'
-                sh 'npm test'
+                dir('projet-02-node-test'){
+                    echo 'Executions des testes...'
+                    sh 'npm test'
+                }
             }
         }
         stage('Build'){
