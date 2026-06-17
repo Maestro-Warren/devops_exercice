@@ -1,8 +1,8 @@
 pipeline{
     agent any
-      triggers {
-        githubPush()
-    }
+     triggers {
+    gitlab(triggerOnPush: true)
+}
     stages{
         stage('Install'){
             agent { docker { image 'node:20-alpine' } }
