@@ -1,8 +1,11 @@
 pipeline{
     agent any
+      triggers {
+        githubPush()
+    }
     stages{
         stage('Install'){
-            agent { docker { image 'node:18-alpine' } }
+            agent { docker { image 'node:20-alpine' } }
             steps{
                 dir('projet-02-node-test'){
                     sh 'npm ci'
@@ -10,7 +13,7 @@ pipeline{
             }
         }
         stage('Test'){
-            agent { docker { image 'node:18-alpine' } }
+            agent { docker { image 'node:20-alpine' } }
             steps{
                 dir('projet-02-node-test'){
                     echo 'Executions des testes...'
