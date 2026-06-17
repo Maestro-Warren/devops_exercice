@@ -1,8 +1,7 @@
 pipeline{
     agent any
     tools{
-        name 'nodejs-20'
-        type 'NodeJS'
+        nodejs 'NodeJS'
     }
    
 
