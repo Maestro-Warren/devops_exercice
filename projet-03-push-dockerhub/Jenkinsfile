@@ -7,7 +7,7 @@ pipeline{
         )
     }
     environment{
-        IMAGE_NAME ='registry:5000/project03'
+        IMAGE_NAME ='localhost:5000/project03'
     }
     stages{
         stage('Build'){
