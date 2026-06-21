@@ -13,7 +13,9 @@ pipeline {
         }
         stage('Install dependencies'){
             steps{
-                sh 'npm ci'
+                dir('projet-05-multistage-env'){
+                    sh 'npm ci'
+                }
             }
         }
         stage('Build docker image and version'){
