@@ -40,7 +40,7 @@ pipeline{
                 docker run -d --name test-p06 --network devops-exercices_default ${IMAGE_NAME}:${APP_VERSION}
                 sleep 2
                 RESPONSE=$(curl -s http://test-p06/3000)
-                echo ${RESPONSE} | grep -q "${APP_VERSION}" || exit 1
+                echo $RESPONSE | grep -q "${APP_VERSION}" || exit 1
                 echo "version correct"
                 docker stop test-p06 && docker rm test-p06
                 '''
