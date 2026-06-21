@@ -21,7 +21,7 @@ pipeline{
         }
         stage('Image build and versioning'){
             steps{
-                '''
+              sh '''
                 docker build \
                     --build-tag APP_VERSION=${APP_VERSION} \
                     -t ${IMAGE_NAME}:${APP_VERSION} \
