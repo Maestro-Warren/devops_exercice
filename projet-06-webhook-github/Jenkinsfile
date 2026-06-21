@@ -43,19 +43,21 @@ pipeline{
             }
         }
         stage('push to dockerhub'){
-            sh '''
+          steps{
+              sh '''
             docker login -u $DOCKERHUB_CREDENTILS_USR --password-stdin
             docker push ${IMAGE_NAME}:${APP_VERSION}
             docker psuh ${IMAGE_NAME}:latest
             '''
+          }
         }
     }
     post{
-        sucess {
+        success {
             echo "Build #${APP_VERSION} successfull"
         }
         failure{
-            "Build #${APP_VERSION} failed"
+            echo "Build #${APP_VERSION} failed"
         }
         always{
             sh 'docker rm -f test-p06 || true'
