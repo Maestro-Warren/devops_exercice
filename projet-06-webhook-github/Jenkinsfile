@@ -1,0 +1,65 @@
+pipeline{
+    agent any
+    tools{
+        node 'node20'
+    }
+    environment{
+        DOCKERHUB_CREDENTIALS = credentials('084d1a9f-d13f-4311-be4b-f5ecd995c3b3')
+        IMAGE_NAME = 'warren042/project06'
+        APP_VERSION = "${BUILD_NUMBER}.0.0"
+    }
+    stages{
+        stage('chechout'){
+            steps{
+                checkout scm
+            }
+        }
+        stage('Install dependencies'){
+            steps{
+                sh 'npm ci'
+            }
+        }
+        stage('Image build and versioning'){
+            steps{
+                '''
+                docker build \
+                    --build-tag APP_VERSION=${APP_VERSION} \
+                    -t ${IMAGE_NAME}:${APP_VERSION} \
+                    -t ${IAMGE_NAME}:latest \
+                    .
+                '''
+            }
+        }
+        stage('Image test'){
+            steps{
+                sh '''
+                docker run -d --name test-p06 --network devops-exercices_default ${IMAGE_NAME}:${APP_VERSION}
+                sleep 2
+                RESPONSE=$(curl -s http://test-p06/3000)
+                echo ${RESPONSE} | grep -q "${APP_VERSION}" || exit 1
+                echo "version correct"
+                docker stop test-p06 && docker rm test-p06
+                '''
+            }
+        }
+        stage('push to dockerhub'){
+            sh '''
+            docker login -u $DOCKERHUB_CREDENTILS_USR --password-stdin
+            docker push ${IMAGE_NAME}:${APP_VERSION}
+            docker psuh ${IMAGE_NAME}:latest
+            '''
+        }
+    }
+    post{
+        sucess {
+            echo "Build #${APP_VERSION} successfull"
+        }
+        failure{
+            "Build #${APP_VERSION} failed"
+        }
+        always{
+            sh 'docker rm -f test-p06 || true'
+            sh 'docker logout || true'
+        }
+    }
+}
