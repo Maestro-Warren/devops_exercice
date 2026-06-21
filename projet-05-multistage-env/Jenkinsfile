@@ -33,14 +33,7 @@ pipeline {
                         '''
             }
                 }
-                sh '''
-                    docker build \
-                        --build-arg APP_VERSION=${APP_VERSION} \
-                        -t ${IMAGE_NAME}:${APP_VERSION} \
-                        -t ${IMAGE_NAME}:latest \
-                        .
-                        '''
-            }
+            
         }
         stage('Image test'){
             steps{
