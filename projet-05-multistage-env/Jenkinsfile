@@ -1,0 +1,58 @@
+pipeline {
+    agent any 
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('084d1a9f-d13f-4311-be4b-f5ecd995c3b3')
+        IMAGE_NAME = 'warren042/project05'
+        APP_VERSION = '${BUILD_NUMBER}.0.0'
+    }
+    stages{
+        stage('checkout'){
+            steps{
+                checkout scm
+            }
+        }
+        stage('Install dependencies'){
+            steps{
+                sh 'npm ci'
+            }
+        }
+        stage('Build docker image and version'){
+            steps{
+                sh '''
+                    docker build \
+                        --build-arg APP_VERSION=${APP_VERSION} \
+                        -t ${IMAGE_NAME}:${APP_VERSION} \
+                        -t ${IMAGE_NAME}:latest \
+                        .
+                        '''
+            }
+        }
+        stage('Image test'){
+            steps{
+                sh '''
+                docker run -d --name test-p05 --network -devops-exercices_default ${IMAGE_NMAE}:${APP_VERSION}
+                sleep 2
+                RESPONSE=$(curl --s http://localhost:4005/)
+                echo $RESPONSE | grep -q "${APP_VERSION}" || exit 1
+                echo "Version correcte dans la réponse"
+                docker stop test-p05 && docker rm test-p05
+                '''
+            }
+        }
+        stage('push to dockerhub'){
+        steps{
+                sh '''
+            echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+            docker push ${IMAGE_NAME}:${APP_VERSION}
+            docker push ${IMAGE_NAME}:latest
+            '''
+        }
+        }
+    }
+    post {
+        always{
+            sh 'docker rm -f test-p05 || true'
+            sh 'docker logout || true'
+        }
+    }
+}
