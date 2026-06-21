@@ -5,7 +5,7 @@ app.use(express.json());
 let requestCount = 0;
 
 app.get('/', (req, res) => {
-    res.json({ projet: '06', message: 'Webhook GitHub → Jenkins', requests: requestCount });
+    res.json({ projet: '06', message: 'Webhook GitHub → Jenkins', version: process.env.APP_VERSION || '0.0.0', requests: requestCount });
 });
 
 app.post('/api/data', (req, res) => {
