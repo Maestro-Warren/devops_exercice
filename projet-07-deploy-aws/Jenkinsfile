@@ -1,0 +1,92 @@
+pipeline{
+    agent any
+    tools{
+        nodejs "nodejs20"
+    }
+    environment{
+        DOCKERHUB_CREDENTIALS = credentials('084d1a9f-d13f-4311-be4b-f5ecd995c3b3')
+        IMAGE_NAME = warren042/project07
+        APP_VERSION = "${BUILD_VERSION}.0.0"
+        EC2_HOST = 'ec2-13-48-27-172.eu-north-1.compute.amazonaws.com'
+    }
+    stages{
+        stage('checkout scm'){
+            steps{
+                checkout scm
+            }
+        }
+        stage('install dependencies'){
+            steps{
+               dir('projet-07-deploy-aws'){
+                    sh 'npm ci'
+                }
+            }
+        }
+        stage('image build'){
+            steps{
+            dir('projet-07-deploy-aws'){
+                    sh '''
+                    docker build \
+                        --build-arg APP_VERSION=${APP_VERSION} \
+                        -t ${IMAGE_NAME}:${APP_VERSION} \
+                        -t ${IMAGE_NAME}:latest \
+                        .
+                    '''
+                }
+            }
+        }
+        stage('test'){
+            steps{
+                sh '''
+                docker run -d --name test-p07 --network devops-exercices_default ${IMAGE_NAME}:${APP_VERSION}
+                sleep 2
+                curl http://test-p07/3000/health/
+                docker stop test-p07 && docker rm test-p07
+                '''
+            }
+        }
+        stage('push to dockerhub'){
+         steps{
+               sh '''
+            echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+            docker push ${IMAGE_NAME}:${APP_VERSION}
+            docker push ${IMAGE_NAME}:latest
+            '''
+         }
+        }
+        stage('Deploy to AWS EC2'){
+            steps{
+                sshagent(credentials['aws-ec2-ssh-key']){
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ec2-user@${EC2-HOST} << ENDSSH
+                     docker pull ${IMAGE_NAME}:${APP_VERSION}
+                            docker stop app || true
+                            docker rm app || true
+                            docker run -d --name app -p 80:3000 --restart unless-stopped ${IMAGE_NAME}:${APP_VERSION}
+                            sleep 3
+                            curl -f http://localhost/health
+ENDSSH
+                    '''
+                }
+            }
+        }
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                    sleep 5
+                    curl -f http://${EC2_HOST}/health || exit 1
+                    echo "Déploiement vérifié avec succès!"
+                '''
+            }
+        }
+    }
+      post {
+        failure {
+            echo "ECHEC - Rollback potentiel nécessaire"
+        }
+        always {
+            sh 'docker rm -f test-p07 || true'
+            sh 'docker logout || true'
+        }
+    }
+}

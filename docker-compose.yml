@@ -1,4 +1,4 @@
-# GITLAB + JENKINS — 100% HORS LIGNE
+# GITLAB + JENKINS + SONARQUBE + TRIVY — 100% HORS LIGNE
 
 services:
 
@@ -26,6 +26,34 @@ services:
       - registry-data:/var/lib/registry
     restart: unless-stopped
 
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://sonar-db:5432/sonarqube
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-extensions:/opt/sonarqube/extensions
+      - sonarqube-logs:/opt/sonarqube/logs
+    depends_on:
+      - sonar-db
+    restart: unless-stopped
+
+  sonar-db:
+    image: postgres:15-alpine
+    container_name: sonar-db
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonarqube
+    volumes:
+      - sonar-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
   jenkins:
     image: jenkins/jenkins:lts
     container_name: jenkins
@@ -37,10 +65,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /Users/mac/docker:/usr/local/bin/docker
       - /Users/mac/docker-compose:/usr/local/bin/docker-compose
+      - /Users/mac/trivy:/usr/local/bin/trivy
     user: root
     depends_on:
       - gitlab
       - registry
+      - sonarqube
     restart: unless-stopped
 
 volumes:
@@ -50,3 +80,7 @@ volumes:
   jenkins_home:
     external: true
   registry-data:
+  sonarqube-data:
+  sonarqube-extensions:
+  sonarqube-logs:
+  sonar-db-data:
