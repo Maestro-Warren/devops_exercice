@@ -5,7 +5,7 @@ pipeline{
     }
     environment{
         DOCKERHUB_CREDENTIALS = credentials('084d1a9f-d13f-4311-be4b-f5ecd995c3b3')
-        IMAGE_NAME = warren042/project07
+        IMAGE_NAME = 'warren042/project07'
         APP_VERSION = "${BUILD_VERSION}.0.0"
         EC2_HOST = 'ec2-13-48-27-172.eu-north-1.compute.amazonaws.com'
     }
