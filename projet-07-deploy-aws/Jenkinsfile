@@ -58,7 +58,7 @@ pipeline{
             steps{
                 sshagent(credentials['aws-ec2-ssh-key']){
                     sh '''
-                    ssh -o StrictHostKeyChecking=no ec2-user@${EC2-HOST} << ENDSSH
+                    ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} << ENDSSH
                      docker pull ${IMAGE_NAME}:${APP_VERSION}
                             docker stop app || true
                             docker rm app || true
