@@ -56,9 +56,11 @@ pipeline{
                 sshagent(credentials: ['aws-ec2-ssh-key']){
                 sh """
                 echo "📦 Copie du fichier docker-compose STAGING vers le serveur..."
+                ssh ec2-user@${STAGING_HOST} 'mkdir -p ~/staging'
                 scp projet-08-multi-env/docker-compose.staging.yml ec2-user@ec2-13-48-27-172.eu-north-1.compute.amazonaws.com:~/staging/docker-compose.yml
                 echo "🚀 Déploiement STAGING sur le serveur..."
                 ssh ec2-user@${STAGING_HOST} <<ENDSSH
+                cd ~/staging
                 export IMAGE_NAME=${IMAGE_NAME}
                 export TAG=${IMAGE_TAG}
                 docker-compose pull
@@ -81,9 +83,11 @@ ENDSSH
                 sshagent(credentials: ['aws-ec2-ssh-key']){
                      sh """
                 echo "📦 Copie du fichier docker-compose PROD vers le serveur..."
+                ssh ec2-user@${STAGING_HOST} 'mkdir -p ~/production'
                 scp projet-08-multi-env/docker-compose.production.yml ec2-user@${PRODUCTION_HOST}:~/production/docker-compose-production.yml
                 echo "🚀 Déploiement PROD sur le serveur..."
                 ssh ec2-user@${PRODUCTION_HOST} <<ENDSSH
+                cd ~/production
                 export IMAGE_NAME=${IMAGE_NAME}
                 export TAG=${IMAGE_TAG}
                 docker-compose pull
