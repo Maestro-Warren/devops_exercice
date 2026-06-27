@@ -1,0 +1,96 @@
+pipeline{
+    agent any
+    tools{
+        nodejs "node20"
+    }
+    environment{
+        DOCKERHUB_CREDENTIALS = credentials('084d1a9f-d13f-4311-be4b-f5ecd995c3b3')
+        IMAGE_NAME = 'warren042/project08'
+        APP_VERSION = "${BUILD_NUMBER}.0.0"
+        STAGING_HOST = 'ec2-13-48-27-172.eu-north-1.compute.amazonaws.com'
+        PRODUCTION_HOST = 'ec2-13-48-27-172.eu-north-1.compute.amazonaws.com'
+    }
+    stages{
+        stage('Build et Tag'){
+            dir('projet-08-multi-env'){
+                steps{
+                   script{
+                     env.GIT_COMMIT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    env.IMAGE_TAG = "${APP_VERSION}-${GIT_COMMIT}"
+                   }
+                   sh '''
+                    docker build \
+                        --build-arg APP_VERSION=${APP_VERSION} \
+                        -t ${IMAGE_NAME}:${IMAGE_TAG} \
+                        -t ${IMAGE_NAME}:${APP_VERSION} \
+                        .
+                    '''
+                }
+            }  
+         }
+         stage('Image test'){
+            steps{
+                sh'''
+                docker run. -d --name test-p08 --network devops-exercices_default ${IMAGE_NAME}:${IMAGE_TAG}
+                sleep 2
+                curl http://localhost:3000/
+                docker stop test-p08 && docker rm test-p08
+                '''
+            }
+         }
+         stage('Push to Docker hub'){
+            steps{
+                sh'''
+                echo $DOCKERHHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIAL_USR --password-stdin
+                docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                docker push ${IMAGE_NAME}:${APP_VERSION}
+                '''
+            }
+         }
+         stage('Deploy staging'){
+            steps{
+                sh'''
+                sshagent(credentials['aws-ec2-ssh-key']){
+                scp ~/projet-08-multi-env/docker-compose-staging.yml ec2-user@${STAGING_HOST}:~/staging/docker-compose.yml
+                ssh ec2-user@${STAGING_HOST} <<ENDSSH
+                export IMAGE_NAME=${IAMGE_NAME}
+                export TAG=${IMAGE_TAG}
+                docker-compose pull
+                docker-compose up -d
+                sleep
+                curl -f http://localhost:3000/health
+ENDSSH
+                }
+                '''
+            }
+         }
+         stage('Approval production'){
+            steps{
+                input message:'Deploy to production ?', ok:'Deploy !'
+            }
+         }
+         stage('Deploy to production'){
+            steps{
+                sh'''
+                sshagent(credentials['aws-ec2-ssh-key'']){
+                scp ~/projet-08-multi-env/docker-compose-production.yml ec2-user@${PRODUCTION_HOST}:~/production/docker-compose-production.yml
+                ssh ec2-user@${PRODUCTION_HOST} <<ENDSSH
+                export IMAGE_NAME=${IMAGE_NAME}
+                export TAG=${IMAGE_TAG}
+                docker-compose pull
+                docker-compose up -d
+                sleep 2
+                curl http://localhost:3000/health
+ENDSSH
+                }
+                '''
+            }
+         }
+    }
+    post{
+        alway{
+            sh 'docker rm -f test-p08 || true'
+            sh'docker logout'
+        }
+    }
+}

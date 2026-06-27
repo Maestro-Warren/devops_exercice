@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    image: ${IMAGE_NAME}:${TAG}
+    ports:
+     - "3000:3000"
+    environment:
+     - NODE_ENV=production
+     - APP_VERSION=${TAG}
+    restart: always
+    deploy:
+     resources:
+       limits:
+         memory: 256M
+         cpus: '0.5'

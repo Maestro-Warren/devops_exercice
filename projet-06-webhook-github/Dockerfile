@@ -9,7 +9,7 @@ COPY server.js .
 COPY test.js .
 ARG APP_VERSION=0.0.0
 ENV APP_VERSION=${APP_VERSION}
-ENV NODE_ENV=prodection
+ENV NODE_ENV=production
 EXPOSE 3000
 RUN addgroup -S devs_group && adduser -S -D -G devs_group warren_user
 USER warren_user
