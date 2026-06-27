@@ -52,7 +52,7 @@ pipeline{
          stage('Deploy staging'){
             steps{
                 sh'''
-                sshagent(credentials['aws-ec2-ssh-key']){
+                sshagent(credentials: ['aws-ec2-ssh-key']){
                 scp ~/projet-08-multi-env/docker-compose-staging.yml ec2-user@${STAGING_HOST}:~/staging/docker-compose.yml
                 ssh ec2-user@${STAGING_HOST} <<ENDSSH
                 export IMAGE_NAME=${IMAGE_NAME}
@@ -74,7 +74,7 @@ ENDSSH
          stage('Deploy to production'){
             steps{
                 sh'''
-                sshagent(credentials['aws-ec2-ssh-key'']){
+                sshagent(credentials: ['aws-ec2-ssh-key']){
                 scp ~/projet-08-multi-env/docker-compose-production.yml ec2-user@${PRODUCTION_HOST}:~/production/docker-compose-production.yml
                 ssh ec2-user@${PRODUCTION_HOST} <<ENDSSH
                 export IMAGE_NAME=${IMAGE_NAME}
