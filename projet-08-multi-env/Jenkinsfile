@@ -30,12 +30,14 @@ pipeline{
          }
          stage('Image test'){
             steps{
-                sh'''
+                dir('projet-08-multi-env'){
+                                  sh'''
                 docker run. -d --name test-p08 --network devops-exercices_default ${IMAGE_NAME}:${IMAGE_TAG}
                 sleep 2
                 curl http://localhost:3000/
                 docker stop test-p08 && docker rm test-p08
                 '''
+                }
             }
          }
          stage('Push to Docker hub'){
