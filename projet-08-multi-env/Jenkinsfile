@@ -55,7 +55,7 @@ pipeline{
                 sshagent(credentials: ['aws-ec2-ssh-key']){
                 sh """
                 echo "📦 Copie du fichier docker-compose STAGING vers le serveur..."
-                scp projet-08-multi-env/docker-compose-staging.yml ec2-user@ec2-13-48-27-172.eu-north-1.compute.amazonaws.com:~/staging/docker-compose.yml
+                scp /var/jenkins_home/workspace/projet08/projet-08-multi-env/docker-compose-staging.yml ec2-user@ec2-13-48-27-172.eu-north-1.compute.amazonaws.com:~/staging/docker-compose.yml
                 echo "🚀 Déploiement STAGING sur le serveur..."
                 ssh ec2-user@${STAGING_HOST} <<ENDSSH
                 export IMAGE_NAME=${IMAGE_NAME}
