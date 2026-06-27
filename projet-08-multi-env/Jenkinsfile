@@ -63,8 +63,8 @@ pipeline{
                 cd ~/staging
                 export IMAGE_NAME=${IMAGE_NAME}
                 export TAG=${IMAGE_TAG}
-                docker compose pull
-                docker compose up -d
+                docker-compose pull
+                docker-compose up -d
                 sleep 2
                 curl -f http://localhost:3000/health
 ENDSSH
@@ -90,8 +90,8 @@ ENDSSH
                 cd ~/production
                 export IMAGE_NAME=${IMAGE_NAME}
                 export TAG=${IMAGE_TAG}
-                docker compose pull
-                docker compose up -d
+                docker-compose pull
+                docker-compose up -d
                 sleep 2
                 curl -f http://localhost:3000/health
 ENDSSH
