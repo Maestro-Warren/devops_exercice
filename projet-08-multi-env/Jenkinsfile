@@ -40,6 +40,12 @@ pipeline{
                 }
             }
          }
+         stage('Debug - List files') {
+    steps {
+        sh 'ls -la projet-08-multi-env/'
+        sh 'find . -name "docker-compose*.yml"'
+    }
+}
          stage('Push to Docker hub'){
             steps{
                 sh'''
