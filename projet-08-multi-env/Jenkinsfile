@@ -34,7 +34,7 @@ pipeline{
                  sh'''
                 docker run -d --name test-p08 --network devops-exercices_default ${IMAGE_NAME}:${IMAGE_TAG}
                 sleep 2
-                curl http://localhost:3000/health
+                curl http://test-p08:3000/health
                 docker stop test-p08 && docker rm test-p08
                 '''
                 }
@@ -59,7 +59,7 @@ pipeline{
                 export TAG=${IMAGE_TAG}
                 docker-compose pull
                 docker-compose up -d
-                sleep
+                sleep 2
                 curl -f http://localhost:3000/health
 ENDSSH
                 }
