@@ -84,7 +84,7 @@ ENDSSH
                      sh """
                 echo "📦 Copie du fichier docker-compose PROD vers le serveur..."
                 ssh ec2-user@${STAGING_HOST} 'mkdir -p ~/production'
-                scp projet-08-multi-env/docker-compose-production.yml ec2-user@${PRODUCTION_HOST}:~/production/docker-compose-production.yml
+                scp projet-08-multi-env/docker-compose-production.yml ec2-user@${PRODUCTION_HOST}:~/production/docker-compose.yml
                 echo "🚀 Déploiement PROD sur le serveur..."
                 ssh ec2-user@${PRODUCTION_HOST} <<ENDSSH
                 cd ~/production
