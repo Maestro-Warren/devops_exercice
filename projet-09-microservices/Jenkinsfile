@@ -89,7 +89,7 @@ stage('Integration Test') {
                     ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} <<'ENDSSH'
                     cd ~/projet09
                     export REGISTRY=${REGISTRY}
-                    export TAG=${BUILD_NUMBER}
+                    export BUILD_NUMBER=${BUILD_NUMBER}
                     docker-compose pull
                     docker-compose up -d
                     sleep 5
