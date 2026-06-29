@@ -16,4 +16,4 @@ app.get('/users', proxyTo('user-service', '/users'));
 app.get('/products', proxyTo('product-service', '/products'));
 app.get('/health', (req, res) => res.json({ service: 'gateway', status: 'up' }));
 
-app.listen(8080, () => console.log('Gateway on :8080'));
+app.listen(5001, () => console.log('Gateway on :5001'));

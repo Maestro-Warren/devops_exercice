@@ -3,7 +3,7 @@ services:
     image: ${REGISTRY:-warren042}/gateway:${BUILD_NUMBER:-21}
     build: ./api-gateway
     ports:
-      - "8081:3000"
+      - "8081:5001"
     networks:
       - devops-exercices_default
     depends_on:

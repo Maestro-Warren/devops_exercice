@@ -3,6 +3,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 COPY server.js ./
-EXPOSE 3000
+EXPOSE 5001
 USER node
 CMD ["node", "server.js"]
