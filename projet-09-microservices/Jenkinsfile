@@ -12,7 +12,6 @@ pipeline{
     stages{
         stage('Build all services'){
             parallel{
-             dir('projet-09-microservices'){
                stage('Build Gateway') {
                     steps {
                         sh 'docker build -t ${REGISTRY}/gateway:${BUILD_NUMBER} ./api-gateway'
@@ -29,7 +28,6 @@ pipeline{
                     }
                 }
              }
-            }
         }
         stage('Integration Test'){
             steps{
