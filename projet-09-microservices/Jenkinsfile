@@ -4,7 +4,7 @@ pipeline{
         nodejs "node20"
     }
     environment {
-        DOCKERHUB_CREDNTIALS = credentials('084d1a9f-d13f-4311-be4b-f5ecd995c3b3')
+        DOCKERHUB_CREDENTIALS = credentials('084d1a9f-d13f-4311-be4b-f5ecd995c3b3')
         REGISTRY = 'warren042'
         EC2_HOST = 'ec2-13-48-27-172.eu-north-1.compute.amazonaws.com'
 
@@ -47,7 +47,7 @@ pipeline{
         stage('Push All to dockerhub'){
            steps{
             sh'''
-            echo $DOCKERHUB_CREDENTIIALS_PSW | docker login -u $DOCKERHUB_CREDDENTIALS_USR --password-stdin
+            echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
             docker push ${REGISTRY}/gateway:${BUILD_NUMBER}
             docker push ${REGISTRY}/product-service:${BUILD_NUMBER}
             docker push ${REGISTRY}/user-service:${BUILD_NUMBER}
