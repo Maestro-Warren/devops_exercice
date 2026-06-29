@@ -13,14 +13,20 @@ pipeline{
         stage('Build all services'){
             parallel{
              dir('projet-09-microservices'){
-                   steps{
-                    sh'docker build -t ${REGISTRY}/api-gateway:${BUILD_NUMBER} ./api-geteway'
+               stage('Build Gateway') {
+                    steps {
+                        sh 'docker build -t ${REGISTRY}/gateway:${BUILD_NUMBER} ./api-gateway'
+                    }
                 }
-                steps{
-                    sh'docker build -t ${REGISTRY}/product-service:${BUILD_NUMBER} ./product-service'
+                stage('Build User Service') {
+                    steps {
+                        sh 'docker build -t ${REGISTRY}/user-service:${BUILD_NUMBER} ./user-service'
+                    }
                 }
-                steps{
-                    sh'docker build -t ${REGISTRY}/user-service:${BUILD_NUMBER} ./user-service'
+                stage('Build Product Service') {
+                    steps {
+                        sh 'docker build -t ${REGISTRY}/product-service:${BUILD_NUMBER} ./product-service'
+                    }
                 }
              }
             }
@@ -44,7 +50,7 @@ pipeline{
            steps{
             sh'''
             echo $DOCKERHUB_CREDENTIIALS_PSW | docker login -u $DOCKERHUB_CREDDENTIALS_USR --password-stdin
-            docker push ${REGISTRY}/api-gateway:${BUILD_NUMBER}
+            docker push ${REGISTRY}/gateway:${BUILD_NUMBER}
             docker push ${REGISTRY}/product-service:${BUILD_NUMBER}
             docker push ${REGISTRY}/user-service:${BUILD_NUMBER}
             '''
