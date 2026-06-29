@@ -9,4 +9,4 @@ const products = [
 app.get('/products', (req, res) => res.json(products));
 app.get('/health', (req, res) => res.json({ service: 'product-service', status: 'up' }));
 
-app.listen(3000, '0.0.0.0', () => console.log('Product service on :3000'));
+app.listen(3000, () => console.log('Product service on :3000'));

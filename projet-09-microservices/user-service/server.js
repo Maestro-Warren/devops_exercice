@@ -9,4 +9,4 @@ const users = [
 app.get('/users', (req, res) => res.json(users));
 app.get('/health', (req, res) => res.json({ service: 'user-service', status: 'up' }));
 
-app.listen(3000, '0.0.0.0', () => console.log('User service on :3000'));
+app.listen(3000, () => console.log('User service on :3000'));

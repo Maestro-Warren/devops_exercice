@@ -1,31 +1,21 @@
 services:
   gateway:
-    image: ${REGISTRY:-warren042}/gateway:${BUILD_NUMBER:-21}
+    image: ${REGISTRY:-warren042}/gateway:${BUILD_NUMBER}
     build: ./api-gateway
     ports:
       - "8081:5001"
-    networks:
-      - devops-exercices_default
     depends_on:
       - user-service
       - product-service
 
   user-service:
-    image: ${REGISTRY:-warren042}/user-service:${BUILD_NUMBER:-21}
+    image: ${REGISTRY:-warren042}/user-service:${BUILD_NUMBER}
     build: ./user-service
     ports:
       - "3001:3000"
-    networks:
-      - devops-exercices_default
 
   product-service:
-    image: ${REGISTRY:-warren042}/product-service:${BUILD_NUMBER:-21}
+    image: ${REGISTRY:-warren042}/product-service:${BUILD_NUMBER}
     build: ./product-service
     ports:
       - "3002:3000"
-    networks:
-      - devops-exercices_default
-
-networks:
-  devops-exercices_default:
-    external: true
