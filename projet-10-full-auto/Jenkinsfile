@@ -176,3 +176,4 @@ ENDSSH
             sh 'docker logout || true'
         }
     }
+}
