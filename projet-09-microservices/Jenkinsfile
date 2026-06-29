@@ -10,25 +10,29 @@ pipeline{
 
     }
     stages{
-        stage('Build all services'){
-            parallel{
-               stage('Build Gateway') {
-                dir('projet-09-microservices') {    
+ stage('Build all services') {
+            parallel {
+                stage('Build Gateway') {
                     steps {
-                        sh 'docker build -t ${REGISTRY}/gateway:${BUILD_NUMBER} ./api-gateway'
+                        dir('projet-09-microservices') {
+                            sh 'docker build -t ${REGISTRY}/gateway:${BUILD_NUMBER} ./api-gateway'
+                        }
                     }
                 }
                 stage('Build User Service') {
                     steps {
-                        sh 'docker build -t ${REGISTRY}/user-service:${BUILD_NUMBER} ./user-service'
+                        dir('projet-09-microservices') {
+                            sh 'docker build -t ${REGISTRY}/user-service:${BUILD_NUMBER} ./user-service'
+                        }
                     }
                 }
                 stage('Build Product Service') {
                     steps {
-                        sh 'docker build -t ${REGISTRY}/product-service:${BUILD_NUMBER} ./product-service'
+                        dir('projet-09-microservices') {
+                            sh 'docker build -t ${REGISTRY}/product-service:${BUILD_NUMBER} ./product-service'
+                        }
                     }
                 }
-             }
             }
         }
         stage('Integration Test'){
@@ -63,9 +67,9 @@ pipeline{
                     ssh ec2-user@${EC2_HOST}'mkdir -p ~/projet09'
                     scp projet-09-microservices/docker-compose.yml ec2-user@${EC2_HOST}:~/projet09/docker-compose.yml
                     ssh ec2-user@${EC2_HOST} <<ENDSSH
-                    cd ~/project09
+                    cd ~/projet09
                     export REGISTRY=${REGISTRY}
-                    exxport TAG=${BUILD_NUMBER}
+                    export TAG=${BUILD_NUMBER}
                     docker-compose pull
                     docker-compose up -d
                     sleep 5
