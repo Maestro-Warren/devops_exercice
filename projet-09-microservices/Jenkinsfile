@@ -14,21 +14,21 @@ pipeline{
                 stage('Build Gateway') {
                     steps {
                         dir('projet-09-microservices') {
-                            sh 'docker build -t ${REGISTRY}/gateway:${BUILD_NUMBER} ./api-gateway'
+                            sh 'docker build --no-cache -t ${REGISTRY}/gateway:${BUILD_NUMBER} ./api-gateway'
                         }
                     }
                 }
                 stage('Build User Service') {
                     steps {
                         dir('projet-09-microservices') {
-                            sh 'docker build -t ${REGISTRY}/user-service:${BUILD_NUMBER} ./user-service'
+                            sh 'docker build --no-cache -t ${REGISTRY}/user-service:${BUILD_NUMBER} ./user-service'
                         }
                     }
                 }
                 stage('Build Product Service') {
                     steps {
                         dir('projet-09-microservices') {
-                            sh 'docker build -t ${REGISTRY}/product-service:${BUILD_NUMBER} ./product-service'
+                            sh 'docker build --no-cache -t ${REGISTRY}/product-service:${BUILD_NUMBER} ./product-service'
                         }
                     }
                 }
