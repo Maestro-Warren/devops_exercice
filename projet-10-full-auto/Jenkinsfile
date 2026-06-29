@@ -1,0 +1,145 @@
+pipeline{
+    agnet any
+    evironment{
+        EC2_HOST = 'ec2-13-48-27-172.eu-north-1.compute.amazonaws.com'
+        IMAGE_NAME = 'warren042/project10'
+        DOCKERHUB_CREDENTIALS = credentials('084d1a9f-d13f-4311-be4b-f5ecd995c3b3')
+        SLACK_WEBHOOK = credentials('slack-webhook-url')
+    }
+    stages{
+        stage('preparation'){
+            steps{
+                script{
+                    env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    env.GIT_AUTHOR = sh(script: 'git log -1 --format=%an', returnStdout: true).trim()
+                    env.GIT_MESSAGE = sh(script: 'git log -1 --format=%s', returnStdout: true).trim()
+                    env.IMAGE_TAG = "${BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
+                }
+                ech "Build ${IMAGE_TAG} par ${env.GIT_AUTHOR}: ${env.GIT_MESSAGE}"
+            }
+        }
+        stage('Build Docker Image'){
+            steps{
+                dir('projet-10-full-auto'){
+                    sh '''
+                    docker build \
+                        --build-arg APP_VERSION=${IMAGE_TAG} \
+                        -t ${IMAGE_NAME}:${IMAGE_TAG} \
+                        -t ${IMAGE_NAME}:latest \
+                        .
+                    '''
+                }
+            }
+        }
+        stage('Security Scan'){
+            steps{
+                dir('projet-10-full-auto'){
+                    sh'''
+                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                        aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL \
+                         ${IMAGE_NAME}:${IMAGE_TAG} || echo "Vulnérabilités détectées (non-bloquant)"
+                    '''
+                }
+            }
+        }
+           stage('Test Image') {
+            steps {
+                dir('projet-10-full-auto'){
+                    sh '''
+                        docker run -d --name test-p10 --network devops-exercices_default ${IMAGE_NAME}:${IMAGE_TAG}
+                        sleep 3
+                        curl -f http://test-p10/health || exit 1
+                        curl -f http://test-p10/metrics || exit 1
+                        echo "Image testée avec succès"
+                        docker stop test-p10 && docker rm test-p10
+                    '''
+                }
+            }
+        }
+            stage('Push to Docker Hub') {
+            steps {
+                sh '''
+                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker push ${IMAGE_NAME}:latest
+                '''
+            }
+        }
+        stage('Deploy tu Production'){
+            steps{
+                sshagent(['aws-ec2-ssh-key']){
+                     sh"""
+            ssh -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} <<'ENDSSH'
+            CURRENT=$(docker ps --format '{{.Image}}' --filter "name=app" | head -n 1)
+            echo "${CURRENT}" > /tmp/previous_image.txt
+
+            export IMAGE_NAME='''+ env.IMAGE_NAME +'''
+            export IMAGE_TAG='''+ env.IMAGE_TAG +'''
+            docker pull ${IMAGE_NAME}:${IMAGE_TAG}
+            docker stop app || true
+            docker rm app || true
+            docker run -d --name app \
+            -p 80:3000 \
+            --restart unless-st \
+            -e NODE_ENV=production \
+            -e APP_VERSION=${IMAGE_TAG} \
+            ${IMAGE_NAME}:${IMAGE_TAG}
+
+            sleep 3
+            for i in {1..5}; do
+                if curl -f http://localhost/health; then
+                    echo "Déploiement vérifié avec succès!"
+                else
+                    echo "Health check échoué, tentative $i/5 Echec du déploiement, rollback vers l'image précédente..."
+                    docker stop app && docker rm app 
+                    PREV=$(cat /tmp/previous_image.txt)
+                    docker run -d --name app \
+                    -p 80:3000 \
+                    --restart unless-stopped \
+                    -e NODE_ENV=production \
+                    -e APP_VERSION=${PREV##*:} \
+                    ${PREV}
+                    exit 1
+                fi
+                sleep 2
+            done
+            echo "Déploiement vérifié avec succès!"
+ENDSSH
+            """
+                }
+            } 
+         }
+         stage('Smoke test Production'){
+            steps{
+                sh'''
+                   sleep 5
+                    RESPONSE=$(curl -s http://${EC2_HOST}/)
+                    echo "Production response: $RESPONSE"
+                    echo $RESPONSE | grep -q "${IMAGE_TAG}" || exit 1
+                    echo "Version correcte en production!"
+                '''
+            }
+         }
+     }
+      post {
+        success {
+            sh '''
+                curl -X POST ${SLACK_WEBHOOK} \
+                    -H "Content-Type: application/json" \
+                    -d '{"text": "Deploiement reussi! Version: '"${IMAGE_TAG}"' Auteur: '"${GIT_AUTHOR}"'"}' || true
+            '''
+        }
+        failure {
+            sh '''
+                curl -X POST ${SLACK_WEBHOOK} \
+                    -H "Content-Type: application/json" \
+                    -d '{"text": "ECHEC deploiement! Build: #'"${BUILD_NUMBER}"' Verifier: '"${BUILD_URL}"'"}' || true
+            '''
+        }
+        always {
+            sh 'docker rm -f test-p10 || true'
+            sh 'docker logout || true'
+        }
+    }
+}
+    
