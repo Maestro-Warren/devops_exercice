@@ -40,9 +40,9 @@ pipeline{
                 sh'''
                   docker-compose up -d
                     sleep 5
-                    curl -f http://localhost:8081/health || exit 1
-                    curl -f http://localhost:8081/users || exit 1
-                    curl -f http://localhost:8081/products || exit 1
+                    curl -f http://localhost:8080/health || exit 1
+                    curl -f http://localhost:3000/users || exit 1
+                    curl -f http://localhost:3000/products || exit 1
                     echo "Tous les services répondent correctement"
                     docker-compose down
                 '''

@@ -14,10 +14,10 @@ services:
     image: ${REGISTRY}/user-service:${BUILD_NUMBER}
     build: ./user-service
     ports:
-    - "3000"
+    - "3001:3000"
 
   product-service:
     image: ${REGISTRY}/product-service:${BUILD_NUMBER}
     build: ./product-service
     ports:
-    - "3000"
+    - "3002:3000"
