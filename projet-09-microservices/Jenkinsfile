@@ -47,6 +47,28 @@ pipeline{
         }
     }
 }
+stage('Integration Test - Debug'){
+    steps{
+        dir('projet-09-microservices'){
+            sh '''
+            docker-compose up -d
+            sleep 10
+            
+            echo "=== Container Status ==="
+            docker-compose ps
+            
+            echo "=== Gateway Logs ==="
+            docker-compose logs gateway
+            
+            echo "=== Port Mapping Check ==="
+            docker port projet-09-microservices-gateway-1
+            
+            echo "=== Testing Connection ==="
+            curl -v http://localhost:8081/health || echo "Connection failed"
+            '''
+        }
+    }
+}
         stage('Push All to dockerhub'){
            steps{
             sh'''
