@@ -2,19 +2,22 @@ version: '3.8'
 
 services:
   gateway:
+    image: ${REGISTRY}/gateway:${TAG}
     build: ./api-gateway
     ports:
-    - "8081:8080"
+    - "8080:8080"
     depends_on:
     - user-service
     - product-service
 
   user-service:
+    image: ${REGISTRY}/user-service:${TAG}
     build: ./user-service
     ports:
     - "3000"
 
   product-service:
+    image: ${REGISTRY}/product-service:${TAG}
     build: ./product-service
     ports:
     - "3000"
