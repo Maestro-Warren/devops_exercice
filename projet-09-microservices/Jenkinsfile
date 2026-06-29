@@ -7,10 +7,9 @@ pipeline{
         DOCKERHUB_CREDENTIALS = credentials('084d1a9f-d13f-4311-be4b-f5ecd995c3b3')
         REGISTRY = 'warren042'
         EC2_HOST = 'ec2-13-48-27-172.eu-north-1.compute.amazonaws.com'
-
     }
     stages{
- stage('Build all services') {
+        stage('Build all services') {
             parallel {
                 stage('Build Gateway') {
                     steps {
@@ -63,7 +62,7 @@ pipeline{
         stage('Deploy to AWS'){
             steps{
                 sshagent(credentials:['aws-ec2-key']){
-                    sh'''
+                    sh"""
                     ssh ec2-user@${EC2_HOST}'mkdir -p ~/projet09'
                     scp projet-09-microservices/docker-compose.yml ec2-user@${EC2_HOST}:~/projet09/docker-compose.yml
                     ssh ec2-user@${EC2_HOST} <<ENDSSH
@@ -75,7 +74,7 @@ pipeline{
                     sleep 5
                     curl http://localhost:8080/health
 ENDSSH
-                    '''
+                    """
                 }
             }
         }
