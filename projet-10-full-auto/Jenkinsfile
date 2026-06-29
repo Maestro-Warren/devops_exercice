@@ -48,8 +48,8 @@ pipeline {
                     sh '''
                         docker run -d --name test-p10 --network devops-exercices_default ${IMAGE_NAME}:${IMAGE_TAG}
                         sleep 3
-                        curl -f http://test-p10/health || exit 1
-                        curl -f http://test-p10/metrics || exit 1
+                        curl -f http://test-p10:3000/health || exit 1
+                        curl -f http://test-p10:3000/metrics || exit 1
                         echo "Image testée avec succès"
                         docker stop test-p10 && docker rm test-p10
                     '''
@@ -87,7 +87,7 @@ pipeline {
 
                             sleep 5
                             for i in 1 2 3 4 5; do
-                                if curl -f http://localhost/health; then
+                                if curl -f http://localhost:3000/health; then
                                     echo "Health check \$i/5 OK"
                                 else
                                     echo "Health check \$i/5 ECHEC - ROLLBACK"
@@ -108,7 +108,7 @@ ENDSSH
             steps {
                 sh '''
                    sleep 5
-                    RESPONSE=$(curl -s http://${EC2_HOST}/)
+                    RESPONSE=$(curl -s http://${EC2_HOST}:3000/)
                     echo "Production response: $RESPONSE"
                     echo $RESPONSE | grep -q "${IMAGE_TAG}" || exit 1
                     echo "Version correcte en production!"
