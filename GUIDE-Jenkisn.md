@@ -236,168 +236,149 @@ CMD ["node", "server.js"]
 ---
 ---
 
-# PARTIE 2 — COMPRENDRE JENKINS
+# PARTIE 2 — COMPRENDRE GITHUB ACTIONS
 
 ---
 
-## C'est quoi Jenkins ?
+## C'est quoi GitHub Actions ?
 
-Jenkins est un serveur d'automatisation. Il exécute des tâches (builds, tests, déploiements) automatiquement.
+GitHub Actions est l'outil d'automatisation intégré à GitHub. Il exécute des workflows quand tu fais un push, une pull request, un tag, ou manuellement.
 
 Le flow :
 ```
-Tu push sur GitHub → Jenkins détecte → Exécute le pipeline → Résultat (succès/échec)
+Tu push sur GitHub → GitHub Actions détecte → exécute le workflow → résultat (succès/échec)
 ```
 
 ---
 
-## C'est quoi un Jenkinsfile ?
+## C'est quoi un workflow GitHub Actions ?
 
-Un fichier qui décrit TON pipeline en code. Il est dans ton repo Git (pas configuré à la main dans l'interface Jenkins).
+Un workflow est un fichier YAML placé dans le dossier `.github/workflows/` de ton repository.
 
-Avantage : ton pipeline est versionné avec ton code. Si tu changes le code, tu changes le pipeline.
+Avantage : ton pipeline est versionné avec ton code, comme un Jenkinsfile, mais en YAML, et il est directement intégré à GitHub.
 
 ---
 
-## Structure complète d'un Jenkinsfile
+## Structure complète d'un workflow
 
-```groovy
-pipeline {
-    agent any
+```yaml
+name: CI Pipeline
 
-    triggers {
-        githubPush()
-    }
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-    environment {
-        MA_VARIABLE = 'valeur'
-        MES_CREDS = credentials('id-dans-jenkins')
-    }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-    stages {
-        stage('Étape 1') {
-            steps {
-                sh 'commande bash'
-            }
-        }
+      - name: Install dependencies
+        run: npm ci
 
-        stage('Étape 2') {
-            steps {
-                sh 'autre commande'
-            }
-        }
-    }
-
-    post {
-        always {
-            sh 'nettoyage'
-        }
-        success {
-            echo 'Tout est OK!'
-        }
-        failure {
-            echo 'Ça a échoué!'
-        }
-    }
-}
+      - name: Run tests
+        run: npm test
 ```
 
 ---
 
 ## Explication de CHAQUE bloc
 
-### `pipeline { }`
-```groovy
-pipeline {
-    ...
-}
+### `name`
+```yaml
+name: CI Pipeline
 ```
-- Le bloc principal qui englobe TOUT
-- Obligatoire. Tout le reste est dedans.
+- Donne un nom visible dans l'interface GitHub Actions.
+- Très utile pour retrouver rapidement un workflow.
 
-### `agent any`
-```groovy
-agent any
+### `on`
+```yaml
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 ```
-- "Sur quel agent (machine) exécuter le pipeline"
-- `any` = n'importe quel agent disponible (dans ton cas, le serveur Jenkins lui-même)
-- Autres options : `agent { docker { image 'node:18' } }` = exécuter dans un conteneur Docker
+- Déclenche le workflow automatiquement.
+- Tu peux choisir `push`, `pull_request`, `workflow_dispatch`, `release`, `schedule`, etc.
 
-### `triggers { }` — quand déclencher le pipeline
-```groovy
-triggers {
-    githubPush()
-}
+### `jobs`
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
 ```
-- `githubPush()` = se déclenche quand GitHub envoie un webhook (= quand tu push)
-- Sans triggers, tu dois cliquer "Build Now" manuellement
-- Autres options : `pollSCM('H/5 * * * *')` = vérifier GitHub toutes les 5 minutes
+- Un workflow peut contenir plusieurs jobs.
+- Chaque job tourne dans une machine GitHub Runner.
+- `runs-on: ubuntu-latest` = la machine Ubuntu fournie par GitHub.
 
-### `environment { }` — variables d'environnement
-```groovy
-environment {
-    IMAGE_NAME = 'jean/monapp'
-    DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
-}
+### `steps`
+```yaml
+steps:
+  - uses: actions/checkout@v4
+  - run: npm ci
 ```
-- Variables disponibles dans TOUS les stages
-- `credentials('id')` = récupère un secret stocké dans Jenkins
-- Avec `credentials('dockerhub-creds')`, Jenkins crée :
-  - `${DOCKERHUB_CREDENTIALS_USR}` = le username
-  - `${DOCKERHUB_CREDENTIALS_PSW}` = le password/token
+- Les étapes s'exécutent dans l'ordre.
+- `uses` = action déjà prête (comme `actions/checkout`).
+- `run` = commande shell à exécuter.
 
-### `stages { }` — les étapes du pipeline
-```groovy
-stages {
-    stage('Build') {
-        steps {
-            ...
-        }
-    }
-    stage('Test') {
-        steps {
-            ...
-        }
-    }
-}
+### `env` — variables d'environnement
+```yaml
+env:
+  IMAGE_NAME: jean/monapp
 ```
-- Les stages s'exécutent dans L'ORDRE (de haut en bas)
-- Si un stage échoue → tout s'arrête (les stages suivants ne s'exécutent pas)
-- Chaque stage apparaît comme une colonne dans l'interface Jenkins
+- Variables disponibles dans tout le workflow ou dans un job spécifique.
+- Pour les secrets, utilise `secrets.DOCKERHUB_USERNAME` par exemple.
 
-### `steps { }` — les commandes dans un stage
-```groovy
-steps {
-    echo 'Début du build'
-    sh 'docker build -t monapp:v1 .'
-    sh '''
-        docker run -d --name test monapp:v1
-        sleep 2
-        curl http://localhost:3000
-        docker rm -f test
-    '''
-}
+### `needs`
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+```
+- Un job dépendant ne démarre que si les jobs précédents ont réussi.
+- Très pratique pour faire un pipeline séquentiel.
+
+### `strategy.matrix` — exécuter plusieurs variantes
+```yaml
+strategy:
+  matrix:
+    node-version: [18, 20]
+```
+- GitHub Actions peut lancer plusieurs variantes en parallèle.
+- Très utile pour les tests multi-version ou les microservices.
+
+### `if` — conditionner une étape ou un job
+```yaml
+if: github.ref == 'refs/heads/main'
+```
+- Exécute une étape seulement sous certaines conditions.
+- Très pratique pour le deploy en production.
+
+### Secrets GitHub
+Dans GitHub → Settings → Secrets and variables → Actions → New repository secret.
+Exemples :
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+- `EC2_HOST`
+- `EC2_SSH_KEY`
+- `SLACK_WEBHOOK`
+
+Pour les utiliser dans le workflow :
+```yaml
+run: echo "Bonjour ${{ secrets.DOCKERHUB_USERNAME }}"
 ```
 
-| Instruction | Ce que ça fait |
-|-------------|----------------|
-| `echo 'texte'` | Affiche un message dans les logs Jenkins |
-| `sh 'commande'` | Exécute une commande bash |
-| `sh '''...'''` | Exécute PLUSIEURS commandes bash (multi-lignes) |
-
-**Important :** Si une commande `sh` retourne un code d'erreur (exit code ≠ 0), le stage ÉCHOUE.
-C'est comme ça que les tests fonctionnent : si `npm test` échoue → exit 1 → Jenkins arrête tout.
-
-### `script { }` — code Groovy avancé
-```groovy
-steps {
-    script {
-        env.GIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-    }
-    echo "Commit: ${env.GIT_SHORT}"
-}
-```
-- Pour du code plus complexe (variables dynamiques, conditions)
+### Environnements protégés
+GitHub permet de créer des environnements comme `staging` et `production` avec approbation manuelle.
+C'est l'équivalent d'un "approval" dans Jenkins, mais intégré à GitHub.
 - `sh(script: '...', returnStdout: true)` = exécute la commande ET récupère la sortie
 - `.trim()` = enlève les espaces/retours à la ligne
 
@@ -716,80 +697,88 @@ docker-compose up -d
 ---
 ---
 
-# PARTIE 4 — CONFIGURER JENKINS (interface web)
+# PARTIE 4 — CONFIGURER GITHUB ACTIONS
 
 ---
 
-## Créer un job Pipeline
+## Créer un workflow
 
-1. Jenkins → **New Item**
-2. Nom : "projet-01" → Type : **Pipeline** → OK
-3. Section **Pipeline** :
-   - Definition : **Pipeline script from SCM**
-   - SCM : **Git**
-   - Repository URL : `https://github.com/ton-username/projet-01.git`
-   - Branch : `*/main`
-   - Script Path : `Jenkinsfile`
-4. **Save**
-5. **Build Now** pour tester
+1. Dans ton repository GitHub, crée le dossier `.github/workflows/`
+2. Ajoute un fichier YAML, par exemple `.github/workflows/projet01.yml`
+3. Commit + push
+4. Va dans l'onglet **Actions** de GitHub pour voir le workflow s'exécuter
 
 ---
 
-## Configurer le webhook (projet 06+)
+## Configurer les secrets
 
-### Côté Jenkins :
-1. Job → Configure → Build Triggers
-2. Cocher **"GitHub hook trigger for GITScm polling"**
+GitHub → Settings → Secrets and variables → Actions
 
-### Côté GitHub :
-1. Repo → Settings → Webhooks → Add webhook
-2. Payload URL : `http://ADRESSE_JENKINS:8080/github-webhook/`
-   - Le **`/` final est OBLIGATOIRE**
-3. Content type : `application/json`
-4. Events : "Just the push event"
-5. Active : ✓
+Ajoute les secrets suivants selon les projets :
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+- `EC2_HOST`
+- `EC2_SSH_KEY`
+- `SLACK_WEBHOOK`
 
-### Si Jenkins est en local (pas d'IP publique) — utiliser ngrok :
-```bash
-ngrok http 8080
-# Copier l'URL https://xxxxx.ngrok.io
-# Webhook URL = https://xxxxx.ngrok.io/github-webhook/
+### Pourquoi ?
+- Les secrets ne sont jamais exposés dans les logs.
+- C'est l'équivalent des credentials Jenkins, mais beaucoup plus simple.
+
+---
+
+## Déclencher un workflow
+
+### Sur push
+```yaml
+on:
+  push:
+    branches: [main]
 ```
 
----
+### Sur pull request
+```yaml
+on:
+  pull_request:
+```
 
-## Ajouter des Credentials
+### Manuellement
+```yaml
+on:
+  workflow_dispatch:
+```
 
-Jenkins → Manage Jenkins → Credentials → (global) → Add Credentials
-
-### Pour Docker Hub :
-- Type : **Username with password**
-- ID : `dockerhub-creds`
-- Username : ton username Docker Hub
-- Password : Access Token (PAS ton mot de passe — va sur Docker Hub → Account Settings → Security → New Access Token)
-
-### Pour AWS EC2 :
-- Type : **SSH Username with private key**
-- ID : `aws-ec2-ssh-key`
-- Username : `ec2-user`
-- Private Key → Enter directly → coller le contenu du fichier .pem
-
-### Pour Slack :
-- Type : **Secret text**
-- ID : `slack-webhook-url`
-- Secret : l'URL du webhook Slack
+### Sur webhook GitHub (push automatique)
+Avec GitHub Actions, tu n'as pas besoin de configurer un webhook externe : un push sur GitHub déclenche automatiquement le workflow.
 
 ---
 
-## Installer les plugins nécessaires
+## Ajouter des environnements protégés
 
-Jenkins → Manage Jenkins → Plugins → Available plugins
+GitHub → Settings → Environments
 
-Rechercher et installer :
-- **Docker Pipeline** — pour utiliser Docker dans les pipelines
-- **GitHub Integration** — pour les webhooks
-- **SSH Agent** — pour `sshagent()` dans le Jenkinsfile
-- **Credentials Binding** — pour `credentials()` dans le Jenkinsfile
+Exemple :
+- `staging`
+- `production`
+
+Tu peux demander une approbation manuelle avant le déploiement production.
+C'est l'équivalent du `input` de Jenkins, mais plus propre et intégré à GitHub.
+
+---
+
+## Utiliser un runner self-hosted
+
+Si tu veux exécuter les workflows sur une vraie machine (par exemple ton serveur EC2 ou un serveur interne), tu peux ajouter un runner self-hosted.
+
+Exemple :
+```yaml
+runs-on: self-hosted
+```
+
+C'est utile quand tu veux :
+- accéder à Docker sur un serveur dédié
+- faire des déploiements sur un host privé
+- éviter les limites du runner GitHub cloud
 
 ---
 ---

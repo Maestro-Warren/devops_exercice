@@ -1,0 +1,27 @@
+name: Project 01 - Build Docker
+
+on:
+  push:
+    paths:
+      - 'projet-01-html-dasics/**'
+      - '.github/workflows/projet01.yml'
+    workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        working-directory: projet-01-html-basic
+        run: docker build -t projet01:${{ github.sha }} .
+
+      - name: Test container
+        run: |
+          docker run -d --name test-p01 -p 9001:80 projet01:${{ github.sha }}
+          sleep 2
+          curl -f http://localhost:9001 || exit 1
+          docker rm -f test-p01
+
+    
