@@ -20,7 +20,7 @@ jobs:
       - name: Test container
         run: |
           docker run -d --name test-p01 -p 9001:80 projet01:${{ github.sha }}
-          sleep 2
+          sleep 3
           curl -f http://localhost:9001 || exit 1
           docker rm -f test-p01
 
